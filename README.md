@@ -1,4 +1,4 @@
-# Covid19_Tracking
+# Covid19 Tracking R Shiny Web Application
 
 The current code create a R shiny web application to track US Covid-19 confirmed cases and death since 01/22/2020.
 
