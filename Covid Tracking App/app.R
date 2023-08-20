@@ -124,7 +124,7 @@ covid_US_dat_long_state <- covid_US_dat_long %>%
 base_data <- merge(state_shp, covid_US_dat_long_state[covid_US_dat_long_state$date == (Sys.Date()-1), ], 
                    by.x = "NAME", by.y = "Province_State")
 
-pal <- colorBin("YlOrRd", domain = base_data$Prevalence_Rate, bins = c(0, 20, 50, 100, 200, Inf))
+pal <- colorBin("YlOrRd", domain = base_data$Prevalence_Rate, bins = c(10, 100, 400, 1000, 1500, 2000, 3000, Inf))
 
 base_map <- leaflet(base_data) %>% setView(-96, 37.8, 4) %>%
   addTiles() %>% 
@@ -401,18 +401,25 @@ server <- function(input, output, session) {
       base_map
     })
     
-    observeEvent(input$date, {
+   observeEvent(input$date, {
       leafletProxy("map_plot") %>% 
         clearMarkers() %>%
         clearShapes() %>%
         addPolygons(data = map_data(),
                     stroke = FALSE, smoothFactor = 0.2, fillOpacity = 0.4,
-                    fillColor = ~pal(map_data()$Prevalence_Rate )) %>% 
+                    fillColor = ~pal(map_data()$Prevalence_Rate ),
+                    popup = paste("<strong>",map_data()$NAME, "</strong><br>",
+                                   "As of ", map_data()$date, '<br>',
+                                   "Confirmed cases: ", map_data()$Total_Confirmed, '<br>',
+                                   "Total Deaths: ", map_data()$Total_Death, '<br>',
+                                   "Confirmed Cases per 10,000: ", map_data()$Prevalence_Rate, '<br>',
+                                   "Deaths per 10,000: ", map_data()$pop_death_rate, '<br>',
+                                   "Death per Confirmed Cases: ", map_data()$Death_Rate )) %>% 
         
         addCircleMarkers(data = map_data(), lat = ~ Lat, lng = ~ Long, weight = 1, radius = ~(`Daily Confirmed`)^(1/4), 
                          fillOpacity = 0.1, color = "#cc4c02", 
                          group = "New Cases",
-                         label = sprintf("<strong>%s (Daily)</strong><br/>Confirmed cases: %g<br/>Deaths: %d", map_data()$NAME, map_data()$`Daily Confirmed`, map_data()$`Daily Death`) %>% lapply(htmltools::HTML), 
+                         label = sprintf("<strong>%s (Daily)</strong><br/>Confirmed cases: %g", map_data()$NAME, map_data()$`Daily Confirmed`) %>% lapply(htmltools::HTML), 
                          labelOptions = labelOptions(
                            style = list("font-weight" = "normal", padding = "3px 8px"),
                            textsize = "15px",
@@ -422,7 +429,7 @@ server <- function(input, output, session) {
                          radius = ~(Total_Death)^(1/4), 
                          fillOpacity = 0.1, color = "#cc4c02", 
                          group = "Death",
-                         label = sprintf("<strong>%s (cumulative)</strong><br/>Confirmed cases: %g<br/>Deaths: %d<br/>Cases per 10,000: %g<br/>Deaths per 10,000: %g<br/>Death per Confirmed Cases: %g", map_data()$NAME, map_data()$Total_Confirmed, map_data()$Total_Death, map_data()$Prevalence_Rate, map_data()$pop_death_rate, map_data()$Death_Rate) %>% lapply(htmltools::HTML), 
+                         label = sprintf("<strong>%s (Daily)</strong><br/>Deaths: %d", map_data()$NAME, map_data()$`Daily Death`) %>% lapply(htmltools::HTML), 
                          labelOptions = labelOptions(
                            style = list("font-weight" = "normal", padding = "3px 8px"),
                            textsize = "15px",
